@@ -1,3 +1,7 @@
+### v0.5.1
+- Removed pieces of obsoleted codes.
+- Fixed a few exits which is not safe.
+
 ## v0.5
 - Rewrote codes to send HTTP requests and receive responses. Libcurl no longer needed.
 - Revised codes to manipulate the terminal.

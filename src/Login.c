@@ -37,7 +37,6 @@ int main(void)
     int count;
     unsigned int lenuname;
     unsigned int total_len, total_len_temp, post_len;
-    int content_len_len;
     int sigset = 0;
     char* rdptr;
 
@@ -56,9 +55,17 @@ int main(void)
     }
     *rdptr = '\0';
 
+    /* Prepare Memory to Store Password */
+    pswd = (char*)malloc(sizeof(char)*pwsize);
+    if (pswd == NULL) {
+        printf("Failed to malloc memory space to store password string!\n");
+        return -1;
+    }
+
     /* Prepare Terminal for Password Input */
     if (tcgetattr(STDIN_FILENO, &ori) != 0) {
         printf("Failed to setup terminal for password input!\n");
+        free(pswd);
         return -3;
     }
     new = ori;
@@ -66,6 +73,7 @@ int main(void)
     new.c_lflag |= ECHONL;
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &new) != 0) {
         printf("Failed to setup terminal for password input!\n");
+        free(pswd);
         return -3;
     }
     if (sigemptyset(&tsig) || sigaddset(&tsig, SIGINT) || sigaddset(&tsig, SIGTSTP))
@@ -78,13 +86,6 @@ int main(void)
         }
     }
 
-    /* Prepare Memory to Store Password */
-    pswd = (char*)malloc(sizeof(char)*pwsize);
-    if (pswd == NULL) {
-        printf("Failed to malloc memory space to store password string!\n");
-        return -1;
-    }
-
     /* Read Password */
     rdptr = pswd;
     lenpword = 0;
@@ -93,6 +94,14 @@ int main(void)
     while ((cchar = getchar()) != '\n'){
         if (cchar == -1){
             printf("Failed to read password from stdin!\n");
+            /* Restore Terminal */
+            memset(pswd, 0, pwsize);
+            free(pswd);
+            if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ori) != 0) {
+                printf("Warning: Failed to restore terminal!\n");
+            }
+            if (sigset)
+                sigprocmask(SIG_SETMASK, &osig, NULL);
             return -2;
         }
         *rdptr = cchar;
@@ -103,18 +112,26 @@ int main(void)
             if (pwsize < 0) {
                 printf("Password too long!\n");
                 /* Restore Terminal */
+                memset(pswd, 0, pwsize-INCRE);
+                free(pswd);
                 if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ori) != 0) {
                     printf("Warning: Failed to restore terminal!\n");
                 }
-                memset(pswd, 0, pwsize-INCRE);
-                free(pswd);
+                if (sigset)
+                    sigprocmask(SIG_SETMASK, &osig, NULL);
                 return -4;
             }
             temp = (char*)malloc(sizeof(char)*pwsize);
             if (temp == NULL) {
                 printf("Failed to malloc memory space to store password string!\n");
+                /* Restore Terminal */
                 memset(pswd, 0, pwsize-INCRE);
                 free(pswd);
+                if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ori) != 0) {
+                    printf("Warning: Failed to restore terminal!\n");
+                }
+                if (sigset)
+                sigprocmask(SIG_SETMASK, &osig, NULL);
                 return -1;
             }
             (void)memcpy(temp, pswd, pwsize-INCRE);
@@ -137,18 +154,18 @@ int main(void)
 
     /* Prepare Login Post Field */
     total_len = len1 + len2 + len3 + lenuname + (unsigned)lenpword - 4;
-    content_len_len = 0;
     total_len_temp = total_len;
     post_len = total_len;
     while (total_len_temp >= 1){
         total_len_temp /= 10;
         ++total_len;
-        ++content_len_len;
     }
     total_len += (LENGTH_HEADER_LOGIN+4);
     loginpost = (char*)malloc(sizeof(char)*(total_len+1));
     if (loginpost == NULL) {
         printf("Failed to malloc memory space to store login post field!\n");
+        memset(pswd, 0, pwsize);
+        free(pswd);
         return -1;
     }
     (void)snprintf(loginpost, total_len+1, "%s%d%s%s%s%s%s", HTTP_HEADER_LOGIN,\

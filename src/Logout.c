@@ -15,9 +15,8 @@ static char postfield[471];
 
 int main(void)
 {
-    unsigned int total_len, post_len, post_len_len;
+    unsigned int total_len, post_len;
     unsigned int post_len_temp;
-    char* rdptr = postfield;
     messages[0] = '\0';
 
     /* Request userIndex From Server */
@@ -30,13 +29,12 @@ int main(void)
     /* Prepare Post Field for Logout */
     post_len = strlen(userIndex) + 10;
     post_len_temp = post_len;
-    post_len_len = 0;
+    total_len = LENGTH_HEADER_LOGOUT + 4 + post_len;
     while (post_len_temp >= 1)
     {
         post_len_temp /= 10;
-        ++post_len_len;
+        ++total_len;
     }
-    total_len = LENGTH_HEADER_LOGOUT + post_len_len + 4 + post_len;
     (void)snprintf(postfield, total_len, "%s%d\r\n\r\nuserIndex=%s", HTTP_HEADER_LOGOUT,\
             post_len, userIndex);
 

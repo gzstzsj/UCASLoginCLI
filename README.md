@@ -27,4 +27,4 @@ As their names indicate, the `online` binary gets you online and the `offline` b
 
 ## Contact
 
-Please feel free to contact [gzstzsj](mailto:gzstzsj@gmail.com) if there is any problems, questions, ideas or suggestions. Your help in improving the codes is highly appreciated.
+Please feel free to contact [gzstzsj](mailto:gzstzsj@gmail.com) if there is any problem, question, idea or suggestion. Your help in improving the codes is highly appreciated.
