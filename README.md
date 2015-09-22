@@ -16,9 +16,7 @@ Please refer to the simple Makefile provided with the codes. It is easily modifi
 
 ## Usage
 
-Currently the binaries do not read command-line options, work on them is on the plan as mentioned before.
-
-As their names indicate, the `online` binary gets you online and the `offline` binary gets you offline.
+Command-line option `-i` for login; `-o` for logout. Currently only the first provided command-line option will be recognized.
 
 - Only first up-to-19 characters in the username input will be recognized because I assumed that no network account in UCAS have username longer than that.
 - Password input longer than INT_MAX (about $2^{31}$) characters will result in an error. Anyway, much shorter password than that could well cause a memory allocation error.

@@ -1,16 +1,12 @@
-EXEC=online offline
+EXEC=ucasnet
 CC=cc
 LDFLAGS=
 .PHONY:clear
 
 all:$(EXEC) clear
-online: src/Login.c include/common.h include/connect.h process.o connect.o
-	$(CC) -o $@ $< process.o connect.o $(LDFLAGS)
-offline: src/Logout.c include/common.h include/connect.h process.o connect.o
-	$(CC) -o $@ $< process.o connect.o $(LDFLAGS)
-process.o: src/ProcessResult.c
-	$(CC) -c -o $@ $<
-connect.o: src/Connect.c include/connect.h
+ucasnet: src/Main.c ProcessResult.o Connect.o
+	$(CC) -o $@ $< ProcessResult.o Connect.o $(LDFLAGS)
+%.o:src/%.c
 	$(CC) -c -o $@ $<
 clean:
 	rm -f *.o $(EXEC) 

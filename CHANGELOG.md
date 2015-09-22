@@ -1,3 +1,6 @@
+### v0.5.2
+- Combined the two binaries into one.
+
 ### v0.5.1
 - Removed pieces of obsoleted codes.
 - Fixed a few exits which is not safe.
