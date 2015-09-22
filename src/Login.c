@@ -2,42 +2,52 @@
 #include <string.h>
 #include <malloc.h>
 #include <termios.h>
-#include <signal.h>
 #include <unistd.h>
+#include <curl/curl.h>
 #include "../include/common.h"
-#include "../include/connect.h"
 #define INCRE 16
 #define UNAMELEN 20
 
 extern char result[];
 extern char messages[];
 extern char userIndex[];
-extern char receiveline[];
 extern int readMessages(const char*);
 
 static const char* success = "success";
 static char username[UNAMELEN];
-static const char* part1 = "\r\n\r\nuserId=";
+static const char* part1 = "userId=";
 static const char* part2 = "&password=";
 static const char* part3 = "&service=&queryString=null";
-static const unsigned int len1 = 11;
+static const unsigned int len1 = 7;
 static const unsigned int len2 = 10;
 static const unsigned int len3 = 26;
 
+static size_t recId(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+    if (readMessages((const char*)ptr) == 0)
+    {
+        if (strcmp(result, success) != 0) printf("%s\n", messages);
+        else printf("Connected!\n");
+        return size*nmemb;
+    }
+    else return -1;
+}
+
 int main(void)
 {
-    char *loginpost;
+    CURL *curl;
+    CURLcode res;
+
+    char* loginpost;
     char* pswd;
     char* temp;
     struct termios ori, new;
-    sigset_t tsig, osig;
     int pwsize = INCRE;
     int lenpword;
     int cchar;
     int count;
     unsigned int lenuname;
-    unsigned int total_len, total_len_temp, post_len;
-    int sigset = 0;
+    unsigned int tlength;
     char* rdptr;
 
     /* Read Username */
@@ -49,23 +59,16 @@ int main(void)
             printf("Failed to read username from stdin!\n");
             return -2;
         }
+        if (cchar > 96) cchar-=32;
         *rdptr = cchar;
         ++rdptr;
         ++lenuname;
     }
     *rdptr = '\0';
 
-    /* Prepare Memory to Store Password */
-    pswd = (char*)malloc(sizeof(char)*pwsize);
-    if (pswd == NULL) {
-        printf("Failed to malloc memory space to store password string!\n");
-        return -1;
-    }
-
     /* Prepare Terminal for Password Input */
     if (tcgetattr(STDIN_FILENO, &ori) != 0) {
         printf("Failed to setup terminal for password input!\n");
-        free(pswd);
         return -3;
     }
     new = ori;
@@ -73,17 +76,14 @@ int main(void)
     new.c_lflag |= ECHONL;
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &new) != 0) {
         printf("Failed to setup terminal for password input!\n");
-        free(pswd);
         return -3;
     }
-    if (sigemptyset(&tsig) || sigaddset(&tsig, SIGINT) || sigaddset(&tsig, SIGTSTP))
-        printf("Warning: failed to set signal mask correctly\n");
-    else {
-        sigset = 1;
-        if (sigprocmask(SIG_BLOCK, &tsig, &osig)){
-            printf("Warning: failed to set signal mask correctly\n");
-            sigset = 0;
-        }
+
+    /* Prepare Memory to Store Password */
+    pswd = (char*)malloc(sizeof(char)*pwsize);
+    if (pswd == NULL) {
+        printf("Failed to malloc memory space to store password string!\n");
+        return -1;
     }
 
     /* Read Password */
@@ -94,14 +94,6 @@ int main(void)
     while ((cchar = getchar()) != '\n'){
         if (cchar == -1){
             printf("Failed to read password from stdin!\n");
-            /* Restore Terminal */
-            memset(pswd, 0, pwsize);
-            free(pswd);
-            if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ori) != 0) {
-                printf("Warning: Failed to restore terminal!\n");
-            }
-            if (sigset)
-                sigprocmask(SIG_SETMASK, &osig, NULL);
             return -2;
         }
         *rdptr = cchar;
@@ -112,31 +104,18 @@ int main(void)
             if (pwsize < 0) {
                 printf("Password too long!\n");
                 /* Restore Terminal */
-                memset(pswd, 0, pwsize-INCRE);
-                free(pswd);
                 if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ori) != 0) {
                     printf("Warning: Failed to restore terminal!\n");
                 }
-                if (sigset)
-                    sigprocmask(SIG_SETMASK, &osig, NULL);
+                free(pswd);
                 return -4;
             }
-            temp = (char*)malloc(sizeof(char)*pwsize);
+            temp = (char*)realloc(pswd, sizeof(char)*pwsize);
             if (temp == NULL) {
                 printf("Failed to malloc memory space to store password string!\n");
-                /* Restore Terminal */
-                memset(pswd, 0, pwsize-INCRE);
-                free(pswd);
-                if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ori) != 0) {
-                    printf("Warning: Failed to restore terminal!\n");
-                }
-                if (sigset)
-                sigprocmask(SIG_SETMASK, &osig, NULL);
+                if (pswd != NULL) free(pswd);
                 return -1;
             }
-            (void)memcpy(temp, pswd, pwsize-INCRE);
-            memset(pswd, 0, pwsize-INCRE);
-            free(pswd);
             pswd = temp;
             rdptr = pswd + pwsize - 17;
             count = 0;
@@ -149,47 +128,54 @@ int main(void)
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ori) != 0) {
         printf("Warning: Failed to restore terminal!\n");
     }
-    if (sigset)
-        sigprocmask(SIG_SETMASK, &osig, NULL);
 
     /* Prepare Login Post Field */
-    total_len = len1 + len2 + len3 + lenuname + (unsigned)lenpword - 4;
-    total_len_temp = total_len;
-    post_len = total_len;
-    while (total_len_temp >= 1){
-        total_len_temp /= 10;
-        ++total_len;
-    }
-    total_len += (LENGTH_HEADER_LOGIN+4);
-    loginpost = (char*)malloc(sizeof(char)*(total_len+1));
+    tlength = len1 + len2 + len3 + lenuname + (unsigned)lenpword;
+    loginpost = (char*)malloc(sizeof(char)*(tlength+1));
     if (loginpost == NULL) {
         printf("Failed to malloc memory space to store login post field!\n");
-        memset(pswd, 0, pwsize);
-        free(pswd);
         return -1;
     }
-    (void)snprintf(loginpost, total_len+1, "%s%d%s%s%s%s%s", HTTP_HEADER_LOGIN,\
-            post_len, part1, username, part2, pswd, part3);
-    memset(pswd, 0, pwsize);
+    rdptr = loginpost;
+    (void)strcpy(rdptr, part1);
+    rdptr += len1;
+    (void)strcpy(rdptr, username);
+    rdptr += lenuname;
+    (void)strcpy(rdptr, part2);
+    rdptr += len2;
+    (void)strcpy(rdptr, pswd);
+    rdptr += lenpword;
+    (void)strcpy(rdptr, part3);
+    rdptr += len3;
+    *rdptr = '\0';
     free(pswd);
 
     result[0] = '\0';
     messages[0] = '\0';
     userIndex[0] = '\0';
 
-    /* Send HTTP Request and Process the Response */
-    if (http_req(loginpost, total_len, receiveline, MAXLINE) == 0)
-    {
-        if (readMessages((const char*)receiveline) == 0)
-        {
-            if (strcmp(result, success) != 0) printf("%s\n", messages);
-            else printf("Connected!\n");
-        }
-        memset(loginpost, 0, total_len);
-        free(loginpost);
-        return 0;
+    /* Send Curl HTTP Request and Process the Response */
+    curl = curl_easy_init();
+    if(curl) {
+        struct curl_slist *chunk = NULL;
+        chunk = curl_slist_append(chunk, "ContentType: application/x-www-form-urlencoded");
+        chunk = curl_slist_append(chunk, "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.85 Safari/537.36");
+        res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+        curl_easy_setopt(curl, CURLOPT_URL, "http://210.77.16.21/eportal/InterFace.do?method=login&time=null");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, loginpost);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, recId);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK)
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        curl_easy_cleanup(curl);
+        curl_slist_free_all(chunk);
     }
-    memset(loginpost, 0, total_len);
+    else {
+        printf("Failed to initialize curl object!\n");
+        free(loginpost);
+        return -5;
+    }
+
     free(loginpost);
-    return -1;
+    return 0;
 }
