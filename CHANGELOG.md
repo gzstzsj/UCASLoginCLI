@@ -1,3 +1,8 @@
+## v0.6
+- Add a command-line option to show remaining flow.
+- Fixed a serious buffer overflow.
+- No longer require username and password if you have already logged in.
+
 ### v0.5.2
 - Combined the two binaries into one.
 

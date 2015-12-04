@@ -16,12 +16,13 @@ Please refer to the simple Makefile provided with the codes. It is easily modifi
 
 ## Usage
 
-Command-line option `-i` for login; `-o` for logout. Currently only the first provided command-line option will be recognized.
+Command-line option `-i` for login; `-o` for logout; `-f` for showing remaining flow; `-i` and `-o` should not be used together, `-f` should only be used in combination with `-i`.
 
 - Only first up-to-19 characters in the username input will be recognized because I assumed that no network account in UCAS have username longer than that.
 - Password input longer than INT_MAX (about $2^{31}$) characters will result in an error. Anyway, much shorter password than that could well cause a memory allocation error.
 - Returned Index numbers are assumed to be no longer than 199 characters. As far as I have seen, they should be no longer than $98+2*(length of username)$ characters long.
-- Messages returned from the authentication server might not display correctly if the terminal does not support CJK characters.
+- Returned queryStrings are assumed to be no longer than 299 characters. As far as I have seen, they are hashed strings and of fixed length of 259.
+- Messages returned from the authentication server might not display correctly if the terminal does not support wide characters.
 
 ## Contact
 

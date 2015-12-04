@@ -1,14 +1,22 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "../include/connect.h"
+#define GB 1073741824
+#define MB 1048576
 #define SEPARATOR ','
 #define QUOTE '"'
 
 static const char* RES = "result\"";
 static const char* MES = "message\"";
 static const char* UID = "userIndex\"";
+static char got_flow[30];
 
 char result[15];
-char messages[40];
+char messages[50];
 char userIndex[200];
+char queryString[300];
+struct flow flow_current;
 
 int readMessages(const char* input)
 {
@@ -16,6 +24,7 @@ int readMessages(const char* input)
     const char* tmpcmp;
     char* tmpwrt;
     int state = 0;
+    int tmpcnt;
     while(*tmpptr != '\0')
     {
         switch (state) {
@@ -59,12 +68,15 @@ int readMessages(const char* input)
                 break;
             case 16:
                 /* Reading result */
+                tmpcnt = 0;
                 tmpwrt = result;
                 while (*tmpptr != QUOTE) {
                     if (*tmpptr == '\0') return -1;
+                    if (tmpcnt > 14) return -2;
                     *tmpwrt = *tmpptr;
                     ++tmpptr;
                     ++tmpwrt;
+                    ++tmpcnt;
                 }
                 *tmpwrt = '\0';
                 state = 0;
@@ -88,11 +100,14 @@ int readMessages(const char* input)
             case 26:
                 /* Reading message */
                 tmpwrt = messages;
+                tmpcnt = 0;
                 while (*tmpptr != QUOTE) {
                     if (*tmpptr == '\0') return -1;
+                    if (tmpcnt > 49) return -2;
                     *tmpwrt = *tmpptr;
                     ++tmpptr;
                     ++tmpwrt;
+                    ++tmpcnt;
                 }
                 *tmpwrt = '\0';
                 state = 0;
@@ -116,11 +131,14 @@ int readMessages(const char* input)
             case 36:
                 /* Reading userIndex */
                 tmpwrt = userIndex;
+                tmpcnt = 0;
                 while (*tmpptr != QUOTE) {
                     if (*tmpptr == '\0') return -1;
+                    if (tmpcnt > 199) return -2;
                     *tmpwrt = *tmpptr;
                     ++tmpptr;
                     ++tmpwrt;
+                    ++tmpcnt;
                 }
                 *tmpwrt = '\0';
                 state = 0;
@@ -132,6 +150,40 @@ int readMessages(const char* input)
     }
     return 0;
 }
+
+int readFlow(const char* input)
+{
+    const char *ptr = input;
+    char *ptr_w = got_flow;
+    int tmp_count = 0;
+    double flowinbyte;
+    ptr = strstr(ptr, "flow");
+    if (ptr == NULL) 
+    {
+        printf("Failed to get user information!\n");
+        return -1;
+    }
+    ptr = strstr(ptr, "value");
+    if (ptr == NULL) 
+    {
+        printf("Failed to get user information!\n");
+        return -2;
+    }
+    ptr += 10;
+    while (tmp_count < 29 && *ptr != '\\')
+    {
+        *ptr_w ++ = *ptr ++;
+        ++tmp_count;
+    }
+    *ptr_w = '\0';
+    flowinbyte = atof(got_flow);
+    if (flow_current.unit = (flowinbyte < GB))
+        flow_current.flow_value = flowinbyte/(float)MB;
+    else 
+        flow_current.flow_value = flowinbyte/(float)GB;
+    return 0;
+}
+    
 int getIndex(const char* retstr)
 {
     const char* rdptr;
@@ -183,4 +235,34 @@ int getIndex(const char* retstr)
     }
     if (state == 4) return 0;
     return -1;
+}
+
+int readQuery(const char* input)
+{
+    const char *ptr;
+    char *ptr_w = queryString;
+    int tmpcnt;
+    ptr = strstr(input, "wlanuserip");
+    if (ptr == NULL) 
+        return -1;
+    while ( tmpcnt < 297 && (*ptr != '\r') ) 
+    {
+        switch (*ptr)
+        {
+            case '=' :
+                *ptr_w ++ = '%';
+                *ptr_w ++ = '3';
+                *ptr_w ++ = 'D';
+                break;
+            case '&':
+                *ptr_w ++ = '%';
+                *ptr_w ++ = '2';
+                *ptr_w ++ = '6';
+                break;
+            default:
+                *ptr_w ++ = *ptr;
+        }
+        ++ ptr;
+    }
+    return 0;
 }

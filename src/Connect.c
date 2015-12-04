@@ -82,7 +82,7 @@ int http_req(const char* http_header, size_t size_header, char* receiveline, siz
     (void)shutdown(socketd, SHUT_WR);
     nleft = max_receive;
     /* Read from the Socket */
-    while ((processed = read(socketd, rdptr, nleft)) > 0)
+    while ( nleft > 0 && (processed = read(socketd, rdptr, nleft)) > 0 )
     {
         rdptr += processed;
         nleft -= processed;
