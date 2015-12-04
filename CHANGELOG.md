@@ -1,3 +1,7 @@
+### v0.6.1
+- No longer try to send a log-in request if you have already logged in.
+- removed a bad `sleep()` call.
+
 ## v0.6
 - Add a command-line option to show remaining flow.
 - Fixed a serious buffer overflow.

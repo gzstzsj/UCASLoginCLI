@@ -10,7 +10,7 @@
 static const char* RES = "result\"";
 static const char* MES = "message\"";
 static const char* UID = "userIndex\"";
-static char got_flow[30];
+//static char got_flow[30];
 
 char result[15];
 char messages[50];
@@ -154,8 +154,8 @@ int readMessages(const char* input)
 int readFlow(const char* input)
 {
     const char *ptr = input;
-    char *ptr_w = got_flow;
-    int tmp_count = 0;
+    //char *ptr_w = got_flow;
+    //int tmp_count = 0;
     double flowinbyte;
     ptr = strstr(ptr, "flow");
     if (ptr == NULL) 
@@ -170,13 +170,15 @@ int readFlow(const char* input)
         return -2;
     }
     ptr += 10;
+    /*
     while (tmp_count < 29 && *ptr != '\\')
     {
         *ptr_w ++ = *ptr ++;
         ++tmp_count;
     }
-    *ptr_w = '\0';
-    flowinbyte = atof(got_flow);
+    */
+    //*ptr_w = '\0';
+    flowinbyte = atof(ptr);
     if (flow_current.unit = (flowinbyte < GB))
         flow_current.flow_value = flowinbyte/(float)MB;
     else 

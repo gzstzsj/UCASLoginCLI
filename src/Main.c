@@ -4,6 +4,7 @@
 #include <termios.h>
 #include <signal.h>
 #include <unistd.h>
+#include <time.h>
 #include "../include/common.h"
 #include "../include/connect.h"
 #define INCRE 16
@@ -32,6 +33,7 @@ static const char* part3 = "&service=&queryString=";
 static const unsigned int len1 = 11;
 static const unsigned int len2 = 10;
 static const unsigned int len3 = 22;
+static const struct timespec wait_time = { 0, 100000000 };
 static char postfield[471];
 static int gfflag;
 
@@ -46,7 +48,8 @@ static int get_success(void)
             userIndex, HTTP_HEADER_SUCCESS_2);
 
     /* Send HTTP Request and Process the Response */
-    return http_req(postfield, total_len, receiveline, MAXLINE);
+    nanosleep(&wait_time, NULL);
+    return http_req(postfield, total_len, receiveline, 0);
 }
 
 static int login(void)
@@ -187,74 +190,75 @@ static int login(void)
 	    }
 	    if (sigset)
 	        sigprocmask(SIG_SETMASK, &osig, NULL);
-	}
-    else
-    {
-        lenuname = 1;
-        lenpword = 1;
-        snprintf(username, 2, "a");
-        pswd = username;
-    }
 
-    /* Prepare Login Post Field */
-    total_len = len1 + len2 + len3 + lenuname + (unsigned)lenpword - 4 + strlen(queryString);
-    total_len_temp = total_len;
-    post_len = total_len;
-    while (total_len_temp >= 1){
-        total_len_temp /= 10;
-        ++total_len;
+	    /* Prepare Login Post Field */
+	    total_len = len1 + len2 + len3 + lenuname + (unsigned)lenpword - 4 + strlen(queryString);
+	    total_len_temp = total_len;
+	    post_len = total_len;
+	    while (total_len_temp >= 1){
+	        total_len_temp /= 10;
+	        ++total_len;
+	    }
+	    total_len += (LENGTH_HEADER_LOGIN+4+strlen(queryString));
+	    loginpost = (char*)malloc(sizeof(char)*(total_len+1));
+	    if (loginpost == NULL) {
+	        printf("Failed to malloc memory space to store login post field!\n");
+	        if (need_success)
+	        {
+	            memset(pswd, 0, pwsize);
+	            free(pswd);
+	        }
+	        return -1;
+	    }
+	    (void)snprintf(loginpost, total_len+1, "%s%d%s%s%s%s%s%s", HTTP_HEADER_LOGIN,\
+	            post_len, part1, username, part2, pswd, part3, queryString);
+	    if (need_success)
+	    {
+	        memset(pswd, 0, pwsize);
+	        free(pswd);
+	    }
+	
+	    result[0] = '\0';
+	    messages[0] = '\0';
+	    userIndex[0] = '\0';
+	
+	    /* Send HTTP Request and Process the Response */
+	    if (http_req(loginpost, total_len, receiveline, MAXLINE) == 0)
+	    {
+	        if (readMessages((const char*)receiveline) == 0)
+	        {
+	            if (strcmp(result, success) != 0) 
+	            {
+	                gfflag = 0;
+	                printf("%s\n", messages);
+	            }
+	            else 
+	            {
+	                if (!need_success) printf("%s\n", messages);
+	                else 
+	                {
+	                    printf("Connected!\n");
+	                    if (get_success() != 0)
+	                        gfflag = 0;
+	                }
+	            }
+	        }
+	        memset(loginpost, 0, total_len);
+	        free(loginpost);
+	        return 0;
+	    }
+	    memset(loginpost, 0, total_len);
+	    free(loginpost);
+	    return -1;
     }
-    total_len += (LENGTH_HEADER_LOGIN+4+strlen(queryString));
-    loginpost = (char*)malloc(sizeof(char)*(total_len+1));
-    if (loginpost == NULL) {
-        printf("Failed to malloc memory space to store login post field!\n");
-        if (need_success)
-        {
-            memset(pswd, 0, pwsize);
-            free(pswd);
+    else {
+        /* Request userIndex From Server */
+        if (getIndex((const char*)receiveline) != 0) {
+            printf("Cannot get userIndex from server!\n");
+            return -2;
         }
-        return -1;
+        return 1;
     }
-    (void)snprintf(loginpost, total_len+1, "%s%d%s%s%s%s%s%s", HTTP_HEADER_LOGIN,\
-            post_len, part1, username, part2, pswd, part3, queryString);
-    if (need_success)
-    {
-        memset(pswd, 0, pwsize);
-        free(pswd);
-    }
-
-    result[0] = '\0';
-    messages[0] = '\0';
-    userIndex[0] = '\0';
-
-    /* Send HTTP Request and Process the Response */
-    if (http_req(loginpost, total_len, receiveline, MAXLINE) == 0)
-    {
-        if (readMessages((const char*)receiveline) == 0)
-        {
-            if (strcmp(result, success) != 0) 
-            {
-                gfflag = 0;
-                printf("%s\n", messages);
-            }
-            else 
-            {
-                if (!need_success) printf("%s\n", messages);
-                else 
-                {
-                    printf("Connected!\n");
-                    if (get_success() != 0)
-                        gfflag = 0;
-                }
-            }
-        }
-        memset(loginpost, 0, total_len);
-        free(loginpost);
-        return 0;
-    }
-    memset(loginpost, 0, total_len);
-    free(loginpost);
-    return -1;
 }
 
 static int logout(void)
@@ -354,9 +358,8 @@ int main(int argc, char** argv)
     {
         case 1:
             ret = login();
-            if (ret == 0 && gfflag) 
+            if (ret >= 0 && gfflag) 
             {
-                sleep(1);
                 return getflow();
             }
             else return ret;
