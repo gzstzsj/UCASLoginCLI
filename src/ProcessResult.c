@@ -232,7 +232,7 @@ int readQuery(const char* input)
 {
     const char *ptr;
     char *ptr_w = queryString;
-    int tmpcnt;
+    int tmpcnt = 0;
     ptr = strstr(input, "wlanuserip");
     if (ptr == NULL) 
         return -1;
@@ -253,6 +253,7 @@ int readQuery(const char* input)
             default:
                 *ptr_w ++ = *ptr;
         }
+        ++ tmpcnt;
         ++ ptr;
     }
     *ptr_w = '\0';
