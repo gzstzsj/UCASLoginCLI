@@ -255,5 +255,6 @@ int readQuery(const char* input)
         }
         ++ ptr;
     }
+    *ptr_w = '\0';
     return 0;
 }
