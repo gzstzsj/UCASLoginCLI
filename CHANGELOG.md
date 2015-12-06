@@ -1,3 +1,6 @@
+### v0.6.2
+- Slightly modified codes.
+
 ### v0.6.1
 - No longer try to send a log-in request if you have already logged in.
 - removed a bad `sleep()` call.

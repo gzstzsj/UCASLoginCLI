@@ -47,7 +47,7 @@ static int addr_init(struct sockaddr_in *servaddr, const char *addr_host, const 
     return 0;
 }
 
-int http_req(const char* http_header, size_t size_header, char* receiveline, size_t max_receive)
+int http_req(const char* http_header, size_t size_header, char* receiveline, size_t max_receive, int f_close)
 {
     struct sockaddr_in servaddr;
     int socketd;
@@ -88,5 +88,7 @@ int http_req(const char* http_header, size_t size_header, char* receiveline, siz
         nleft -= processed;
     }
     *rdptr = '\0';
+    if (f_close)
+        (void)shutdown(socketd, SHUT_RD);
     return 0;
 }

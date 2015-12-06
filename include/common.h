@@ -20,5 +20,5 @@ const size_t LENGTH_HEADER_REQID = 176;
 const size_t LENGTH_HEADER_LOGIN = 263;
 const size_t LENGTH_HEADER_SUCCESS_1 = 50;
 const size_t LENGTH_HEADER_SUCCESS_2 = 151;
-int http_req(const char*, size_t, char*, size_t);
+int http_req(const char*, size_t, char*, size_t, int);
 #endif

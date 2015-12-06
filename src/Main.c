@@ -49,7 +49,7 @@ static int get_success(void)
 
     /* Send HTTP Request and Process the Response */
     nanosleep(&wait_time, NULL);
-    return http_req(postfield, total_len, receiveline, 0);
+    return http_req(postfield, total_len, receiveline, 0, 1);
 }
 
 static int login(void)
@@ -70,7 +70,7 @@ static int login(void)
     char* rdptr;
 
     /* Request queryString From Server */
-    if (http_req(HTTP_HEADER_REQID, LENGTH_HEADER_REQID, receiveline, MAXLINE) != 0) return -1;
+    if (http_req(HTTP_HEADER_REQID, LENGTH_HEADER_REQID, receiveline, MAXLINE, 1) != 0) return -1;
     if (readQuery((const char*)receiveline) != 0) 
     {
         need_success = 0;
@@ -223,7 +223,7 @@ static int login(void)
 	    userIndex[0] = '\0';
 	
 	    /* Send HTTP Request and Process the Response */
-	    if (http_req(loginpost, total_len, receiveline, MAXLINE) == 0)
+	    if (http_req(loginpost, total_len, receiveline, MAXLINE, 0) == 0)
 	    {
 	        if (readMessages((const char*)receiveline) == 0)
 	        {
@@ -268,7 +268,7 @@ static int logout(void)
     messages[0] = '\0';
 
     /* Request userIndex From Server */
-    if (http_req(HTTP_HEADER_REQID, LENGTH_HEADER_REQID, receiveline, MAXLINE) != 0) return -1;
+    if (http_req(HTTP_HEADER_REQID, LENGTH_HEADER_REQID, receiveline, MAXLINE, 1) != 0) return -1;
     if (getIndex((const char*)receiveline) != 0) {
         printf("Cannot get userIndex from server!\n");
         return -2;
@@ -287,7 +287,7 @@ static int logout(void)
             post_len, userIndex);
 
     /* Send HTTP Request and Process the Response */
-    if (http_req(postfield, total_len, receiveline, MAXLINE) == 0)
+    if (http_req(postfield, total_len, receiveline, MAXLINE, 0) == 0)
     {
         if (readMessages((const char*)receiveline) == 0)
             printf("%s\n", messages);
@@ -316,7 +316,7 @@ static int getflow(void)
             post_len, userIndex);
 
     /* Send HTTP Request and Process the Response */
-    if (http_req(postfield, total_len, receiveline, MAXLINE) == 0)
+    if (http_req(postfield, total_len, receiveline, MAXLINE, 1) == 0)
     {
         if ( (ret = readFlow((const char*)receiveline)) == 0)
         {
