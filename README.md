@@ -16,7 +16,7 @@ Please refer to the simple Makefile provided with the codes. It is easily modifi
 
 ## Usage
 
-Command-line option `-i` for login; `-o` for logout; `-f` for showing remaining flow; `-i` and `-o` should not be used together, `-f` should only be used in combination with `-i`. At logging in, the program will wait 0.1s before trying to retrieve user account information due to a slight delay of server response to a prior request. Occasioanlly this could be causing failure in retrieving user account information. 
+Command-line option `-i` for login; `-o` for logout; `-f` for showing remaining flow; `-i` and `-o` should not be used together, while `-f` should only be used in combination with `-i`. At logging in, the program will wait 0.1s before trying to retrieve user account information due to a slight delay of server response to a prior request. Occasionally this could be causing failure in retrieving user account information. 
 
 - Only first up-to-19 characters in the username input will be recognized because I assumed that no network account in UCAS have username longer than that.
 - Password input longer than INT_MAX (about $2^{31}$) characters will result in an error. Anyway, much shorter password than that could well cause a memory allocation error.
