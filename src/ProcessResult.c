@@ -11,12 +11,6 @@ static const char* RES = "result\"";
 static const char* MES = "message\"";
 static const char* UID = "userIndex\"";
 
-char result[15];
-char messages[50];
-char userIndex[200];
-char queryString[300];
-struct flow flow_current;
-
 int readMessages(const char* input)
 {
     const char* tmpptr = input;

@@ -1,4 +1,8 @@
+### v0.6.3
+- Reorganized files.
+
 ### v0.6.2
+- Fixed a few bugs.
 - Slightly modified codes.
 
 ### v0.6.1
