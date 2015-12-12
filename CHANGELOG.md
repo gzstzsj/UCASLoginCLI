@@ -1,7 +1,3 @@
-## v0.7
-- Fixed that username and password were not correctly encoded which could cause a block at HTTP request.
-- Fixed that messages returned from server which are not surrounded by quotation marks were not correctly recorded.
-
 ### v0.6.3
 - Reorganized files.
 
