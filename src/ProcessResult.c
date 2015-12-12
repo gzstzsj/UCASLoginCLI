@@ -1,21 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "../include/connect.h"
 #define GB 1073741824
 #define MB 1048576
 #define SEPARATOR ','
+#define STFLAG ':'
 #define QUOTE '"'
 
 static const char* RES = "result\"";
 static const char* MES = "message\"";
 static const char* UID = "userIndex\"";
-
-char result[15];
-char messages[50];
-char userIndex[200];
-char queryString[300];
-struct flow flow_current;
 
 int readMessages(const char* input)
 {
@@ -24,6 +20,7 @@ int readMessages(const char* input)
     char* tmpwrt;
     int state = 0;
     int tmpcnt;
+    int ignore_separator = 0;
     while(*tmpptr != '\0')
     {
         switch (state) {
@@ -60,18 +57,25 @@ int readMessages(const char* input)
                     ++tmpptr;
                     ++tmpcmp;
                 }
+                --tmpptr;
                 if (state == 10) state = 15;
                 break;
             case 15:
-                if (*tmpptr == QUOTE) state = 16;
+                if (*tmpptr == STFLAG) state = 16;
                 break;
             case 16:
                 /* Reading result */
                 tmpcnt = 0;
                 tmpwrt = result;
-                while (*tmpptr != QUOTE) {
+                while (ignore_separator || *tmpptr != SEPARATOR) {
                     if (*tmpptr == '\0') return -1;
                     if (tmpcnt > 14) return -2;
+                    if (*tmpptr == QUOTE) 
+                    {
+                        ignore_separator = !ignore_separator;
+                        ++ tmpptr;
+                        continue;
+                    }
                     *tmpwrt = *tmpptr;
                     ++tmpptr;
                     ++tmpwrt;
@@ -91,18 +95,25 @@ int readMessages(const char* input)
                     ++tmpptr;
                     ++tmpcmp;
                 }
+                --tmpptr;
                 if (state == 20) state = 25;
                 break;
             case 25:
-                if (*tmpptr == QUOTE) state = 26;
+                if (*tmpptr == STFLAG) state = 26;
                 break;
             case 26:
                 /* Reading message */
                 tmpwrt = messages;
                 tmpcnt = 0;
-                while (*tmpptr != QUOTE) {
+                while (ignore_separator || *tmpptr != SEPARATOR) {
                     if (*tmpptr == '\0') return -1;
-                    if (tmpcnt > 49) return -2;
+                    if (tmpcnt > 99) return -2;
+                    if (*tmpptr == QUOTE) 
+                    {
+                        ignore_separator = !ignore_separator;
+                        ++ tmpptr;
+                        continue;
+                    }
                     *tmpwrt = *tmpptr;
                     ++tmpptr;
                     ++tmpwrt;
@@ -122,18 +133,25 @@ int readMessages(const char* input)
                     ++tmpptr;
                     ++tmpcmp;
                 }
+                --tmpptr;
                 if (state == 30) state = 35;
                 break;
             case 35:
-                if (*tmpptr == QUOTE) state = 36;
+                if (*tmpptr == STFLAG) state = 36;
                 break;
             case 36:
                 /* Reading userIndex */
                 tmpwrt = userIndex;
                 tmpcnt = 0;
-                while (*tmpptr != QUOTE) {
+                while (ignore_separator || *tmpptr != SEPARATOR) {
                     if (*tmpptr == '\0') return -1;
                     if (tmpcnt > 199) return -2;
+                    if (*tmpptr == QUOTE)
+                    {
+                        ignore_separator = !ignore_separator;
+                        ++ tmpptr;
+                        continue;
+                    }
                     *tmpwrt = *tmpptr;
                     ++tmpptr;
                     ++tmpwrt;
