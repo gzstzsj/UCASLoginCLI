@@ -1,3 +1,6 @@
+### v0.7.1
+- Fixed that returned messages on logoff were not correctly displayed.
+
 ## v0.7
 - Fixed that username and password were not correctly encoded which could cause the program blocked at HTTP requests.
 - Fixed that returned messages not surrounded by quotation marks were not correctly recorded.

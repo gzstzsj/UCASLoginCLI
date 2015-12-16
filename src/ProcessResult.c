@@ -6,6 +6,7 @@
 #define GB 1073741824
 #define MB 1048576
 #define SEPARATOR ','
+#define EDFLAG '}'
 #define STFLAG ':'
 #define QUOTE '"'
 
@@ -67,7 +68,7 @@ int readMessages(const char* input)
                 /* Reading result */
                 tmpcnt = 0;
                 tmpwrt = result;
-                while (ignore_separator || *tmpptr != SEPARATOR) {
+                while (ignore_separator || (*tmpptr != SEPARATOR && *tmpptr != EDFLAG)) {
                     if (*tmpptr == '\0') return -1;
                     if (tmpcnt > 14) return -2;
                     if (*tmpptr == QUOTE) 
@@ -105,7 +106,7 @@ int readMessages(const char* input)
                 /* Reading message */
                 tmpwrt = messages;
                 tmpcnt = 0;
-                while (ignore_separator || *tmpptr != SEPARATOR) {
+                while (ignore_separator || (*tmpptr != SEPARATOR && *tmpptr != EDFLAG)) {
                     if (*tmpptr == '\0') return -1;
                     if (tmpcnt > 99) return -2;
                     if (*tmpptr == QUOTE) 
@@ -143,7 +144,7 @@ int readMessages(const char* input)
                 /* Reading userIndex */
                 tmpwrt = userIndex;
                 tmpcnt = 0;
-                while (ignore_separator || *tmpptr != SEPARATOR) {
+                while (ignore_separator || (*tmpptr != SEPARATOR && *tmpptr != EDFLAG)) {
                     if (*tmpptr == '\0') return -1;
                     if (tmpcnt > 199) return -2;
                     if (*tmpptr == QUOTE)
