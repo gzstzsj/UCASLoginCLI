@@ -1,3 +1,6 @@
+### v0.7.2
+- Adjusted post fields.
+
 ### v0.7.1
 - Fixed that returned messages on logoff were not correctly displayed.
 

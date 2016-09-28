@@ -42,12 +42,12 @@ static const char* success = "success";
 static char username[UNAMELEN];
 static const char* part1 = "\r\n\r\nuserId=";
 static const char* part2 = "&password=";
-static const char* part3 = "&service=&queryString=";
+static const char* part3 = "&operatorPwd=&validcode=&service=&queryString=";
 static const unsigned int len1 = 11;
 static const unsigned int len2 = 10;
-static const unsigned int len3 = 22;
+static const unsigned int len3 = 46;
 static const struct timespec wait_time = { 0, 100000000 };
-static char postfield[471];
+static char postfield[495];
 
 static const char* AUTH_SERVER = "210.77.16.21";
 static const uint16_t AUTH_PORT = 80;
